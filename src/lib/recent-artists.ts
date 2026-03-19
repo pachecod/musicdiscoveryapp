@@ -1,6 +1,11 @@
 import { mkdir, readFile, writeFile } from "fs/promises";
 import path from "path";
 
+/** Netlify Functions use a read-only bundle; recent list is the committed JSON. `netlify dev` still writes locally. */
+function shouldSkipRecentWrites(): boolean {
+  return process.env.NETLIFY === "true" && process.env.NETLIFY_DEV !== "true";
+}
+
 const DATA_DIR = path.join(process.cwd(), "data");
 const STORE_PATH = path.join(DATA_DIR, "recent-artists.json");
 const MAX_STORED = 48;
@@ -77,6 +82,8 @@ export async function recordRecentArtist(entry: {
   const mbid = entry.mbid.trim();
   const name = entry.name.trim();
   if (!mbid || !name) return;
+
+  if (shouldSkipRecentWrites()) return;
 
   await enqueueWrite(async () => {
     const items = await readStore();

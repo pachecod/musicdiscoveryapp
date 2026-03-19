@@ -30,7 +30,10 @@ npm run dev
 
 Open [http://localhost:3000](http://localhost:3000), search an artist, open a result.
 
-The home page shows **Recently Searched Artists** (up to 16 tiles) from a shared file `data/recent-artists.json` (gitignored). Each successful **artist page** view records that act and stores the **top YouTube result thumbnail** (when the YouTube API returns a hit) for the tile image. On read-only or ephemeral serverless disks, replace this store with a database or hosted KV if you deploy.
+The home page shows **Recently Searched Artists** (up to 16 tiles) from `data/recent-artists.json`.
+
+- **Local / writable hosts:** each successful **artist page** view appends/updates the file and stores the **top YouTube result thumbnail** when available.
+- **Netlify:** the deploy bundle is read-only, so the grid shows whatever **last shipped in git**. To refresh production tiles, run the app locally (or edit the JSON), then **commit and push** `data/recent-artists.json` so the next deploy picks it up. Server-side writes are skipped when `NETLIFY=true` (not `netlify dev`).
 
 ## API routes
 
