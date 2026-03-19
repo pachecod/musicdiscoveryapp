@@ -1,65 +1,175 @@
-import Image from "next/image";
+import Link from "next/link";
+import {
+  RECENT_GRID_LIMIT,
+  getRecentArtists,
+  type RecentArtistRecord,
+} from "@/lib/recent-artists";
+import { searchMbArtists } from "@/lib/musicbrainz";
 
-export default function Home() {
+type Props = { searchParams: Promise<{ q?: string }> };
+
+export const dynamic = "force-dynamic";
+
+export default async function Home({ searchParams }: Props) {
+  const q = (await searchParams).q?.trim() ?? "";
+
+  const [artists, recent] = await Promise.all([
+    q ? searchMbArtists(q, 24) : Promise.resolve([]),
+    getRecentArtists(RECENT_GRID_LIMIT),
+  ]);
+
+  const recentSlots: (RecentArtistRecord | null)[] = [...recent];
+  while (recentSlots.length < RECENT_GRID_LIMIT) recentSlots.push(null);
+
   return (
-    <div className="flex flex-col flex-1 items-center justify-center bg-zinc-50 font-sans dark:bg-black">
-      <main className="flex flex-1 w-full max-w-3xl flex-col items-center justify-between py-32 px-16 bg-white dark:bg-black sm:items-start">
-        <Image
-          className="dark:invert"
-          src="/next.svg"
-          alt="Next.js logo"
-          width={100}
-          height={20}
-          priority
-        />
-        <div className="flex flex-col items-center gap-6 text-center sm:items-start sm:text-left">
-          <h1 className="max-w-xs text-3xl font-semibold leading-10 tracking-tight text-black dark:text-zinc-50">
-            To get started, edit the page.tsx file.
-          </h1>
-          <p className="max-w-md text-lg leading-8 text-zinc-600 dark:text-zinc-400">
-            Looking for a starting point or more instructions? Head over to{" "}
-            <a
-              href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              className="font-medium text-zinc-950 dark:text-zinc-50"
-            >
-              Templates
-            </a>{" "}
-            or the{" "}
-            <a
-              href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              className="font-medium text-zinc-950 dark:text-zinc-50"
-            >
-              Learning
-            </a>{" "}
-            center.
+    <div className="min-h-full bg-[#0c0b09] text-[#f4f0e6]">
+      <div className="mx-auto flex min-h-full w-full max-w-5xl flex-col gap-10 px-5 py-14">
+        <header className="space-y-2">
+          <p className="font-mono text-xs tracking-[0.2em] text-[#c4a574] uppercase">
+            Music discovery
           </p>
-        </div>
-        <div className="flex flex-col gap-4 text-base font-medium sm:flex-row">
-          <a
-            className="flex h-12 w-full items-center justify-center gap-2 rounded-full bg-foreground px-5 text-background transition-colors hover:bg-[#383838] dark:hover:bg-[#ccc] md:w-[158px]"
-            href="https://vercel.com/new?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
+          <h1 className="font-[family-name:var(--font-fraunces)] text-4xl leading-tight font-medium text-[#fff8ef]">
+            Find artists, tracks, and videos
+          </h1>
+          <p className="max-w-xl text-sm leading-relaxed text-[#a8a095]">
+            Search uses{" "}
+            <a
+              className="text-[#e8d4b0] underline decoration-[#5c4d3a] underline-offset-4 hover:decoration-[#c4a574]"
+              href="https://musicbrainz.org/doc/MusicBrainz_API"
+              target="_blank"
+              rel="noreferrer"
+            >
+              MusicBrainz
+            </a>
+            . Open an artist for YouTube, a Wikipedia summary (via Wikidata), and a Ticketmaster concert
+            map (API keys only where noted).
+          </p>
+        </header>
+
+        <form action="/" method="get" className="flex flex-col gap-3 sm:flex-row sm:items-center">
+          <label className="sr-only" htmlFor="q">
+            Search artists
+          </label>
+          <input
+            id="q"
+            name="q"
+            type="search"
+            defaultValue={q}
+            placeholder="Artist name…"
+            className="w-full rounded-xl border border-[#2a2620] bg-[#141210] px-4 py-3 text-[#f4f0e6] placeholder:text-[#6b6459] outline-none ring-[#c4a574]/40 focus:ring-2"
+            autoComplete="off"
+          />
+          <button
+            type="submit"
+            className="shrink-0 rounded-xl bg-[#c4a574] px-6 py-3 text-sm font-medium text-[#1a1510] transition hover:bg-[#d4b584]"
           >
-            <Image
-              className="dark:invert"
-              src="/vercel.svg"
-              alt="Vercel logomark"
-              width={16}
-              height={16}
-            />
-            Deploy Now
-          </a>
-          <a
-            className="flex h-12 w-full items-center justify-center rounded-full border border-solid border-black/[.08] px-5 transition-colors hover:border-transparent hover:bg-black/[.04] dark:border-white/[.145] dark:hover:bg-[#1a1a1a] md:w-[158px]"
-            href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            Documentation
-          </a>
-        </div>
-      </main>
+            Search
+          </button>
+        </form>
+
+        {q && (
+          <section className="space-y-4">
+            <h2 className="font-mono text-xs tracking-widest text-[#7a7165] uppercase">
+              Results for “{q}”
+            </h2>
+            {artists.length === 0 ? (
+              <p className="text-sm text-[#a8a095]">No artists matched. Try another spelling.</p>
+            ) : (
+              <ul className="divide-y divide-[#2a2620] rounded-2xl border border-[#2a2620] bg-[#141210]/80">
+                {artists.map((a) => (
+                  <li key={a.id}>
+                    <Link
+                      href={`/artist/${a.id}`}
+                      className="flex flex-col gap-0.5 px-4 py-4 transition hover:bg-[#1c1914] sm:flex-row sm:items-baseline sm:justify-between"
+                    >
+                      <span className="text-base font-medium text-[#fff8ef]">{a.name}</span>
+                      <span className="text-xs text-[#7a7165]">
+                        {a.disambiguation ? `${a.disambiguation}` : "MusicBrainz artist"}
+                        {typeof a.score === "number" ? ` · score ${a.score}` : ""}
+                      </span>
+                    </Link>
+                  </li>
+                ))}
+              </ul>
+            )}
+          </section>
+        )}
+
+        <section className="space-y-4">
+          <h2 className="font-mono text-xs tracking-[0.2em] text-[#7a7165] uppercase">
+            Recently Searched Artists
+          </h2>
+          {recent.length === 0 ? (
+            <p className="text-sm text-[#a8a095]">
+              Open any artist page to add them here. The list is shared for everyone using this app on
+              the same server.
+            </p>
+          ) : (
+            <ul className="grid w-full grid-cols-4 gap-2 sm:gap-3">
+              {recentSlots.map((a, i) =>
+                a ? (
+                  <li key={a.mbid} className="min-w-0">
+                    <Link
+                      href={`/artist/${a.mbid}`}
+                      className={`relative flex aspect-square w-full flex-col overflow-hidden rounded-lg border text-center transition hover:border-[#c4a574]/45 sm:rounded-xl ${
+                        a.coverUrl
+                          ? "border-[#2a2620] bg-[#141210]"
+                          : "items-center justify-center gap-1 border-[#2a2620] bg-[#141210]/90 p-1.5 hover:bg-[#1c1914] sm:gap-1.5 sm:p-2.5"
+                      }`}
+                    >
+                      {a.coverUrl ? (
+                        <>
+                          {/* eslint-disable-next-line @next/next/no-img-element */}
+                          <img
+                            src={a.coverUrl}
+                            alt=""
+                            className="absolute inset-0 h-full w-full object-cover"
+                          />
+                          <div
+                            className="absolute inset-0 bg-gradient-to-t from-[#0c0b09]/95 via-[#0c0b09]/35 to-transparent"
+                            aria-hidden
+                          />
+                          <div className="relative z-10 mt-auto flex w-full flex-col gap-0.5 p-1.5 text-left sm:p-2">
+                            <span className="line-clamp-2 text-[10px] font-semibold leading-tight text-[#fff8ef] drop-shadow-md sm:text-xs">
+                              {a.name}
+                            </span>
+                            {a.disambiguation && (
+                              <span className="line-clamp-1 text-[9px] leading-tight text-[#d4cfc4] drop-shadow sm:text-[10px]">
+                                {a.disambiguation}
+                              </span>
+                            )}
+                          </div>
+                        </>
+                      ) : (
+                        <>
+                          <span
+                            className="font-[family-name:var(--font-fraunces)] text-2xl leading-none text-[#c4a574] sm:text-3xl md:text-4xl"
+                            aria-hidden
+                          >
+                            {a.name.slice(0, 1).toUpperCase()}
+                          </span>
+                          <span className="line-clamp-3 w-full text-[10px] font-medium leading-tight text-[#fff8ef] sm:text-xs md:text-sm">
+                            {a.name}
+                          </span>
+                          {a.disambiguation && (
+                            <span className="line-clamp-2 hidden w-full text-[9px] leading-tight text-[#7a7165] sm:block sm:text-[10px]">
+                              {a.disambiguation}
+                            </span>
+                          )}
+                        </>
+                      )}
+                    </Link>
+                  </li>
+                ) : (
+                  <li key={`empty-${i}`} className="min-w-0" aria-hidden>
+                    <div className="aspect-square w-full rounded-lg border border-dashed border-[#2a2620]/50 bg-[#0c0b09]/40 sm:rounded-xl" />
+                  </li>
+                )
+              )}
+            </ul>
+          )}
+        </section>
+      </div>
     </div>
   );
 }

@@ -39,3 +39,6 @@ yarn-error.log*
 # typescript
 *.tsbuildinfo
 next-env.d.ts
+
+# local recent-artist history (home page tiles)
+/data/recent-artists.json

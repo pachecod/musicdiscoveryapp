@@ -1,36 +1,38 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# Discover — music & video
 
-## Getting Started
+Next.js app that searches **MusicBrainz** artists and opens a detail page with **YouTube** embeds, an English **Wikipedia** lead section (resolved with **Wikidata Query Service** using MusicBrainz ID [P434](https://www.wikidata.org/wiki/Property:P434)), and an **upcoming concerts** map from the **Ticketmaster Discovery API** (map tiles: **OpenStreetMap** via Leaflet — no map API key).
 
-First, run the development server:
+## Setup
+
+```bash
+cp .env.example .env.local
+```
+
+| Variable | Role |
+|----------|------|
+| `YOUTUBE_API_KEY` | [YouTube Data API v3](https://developers.google.com/youtube/v3) |
+| `TICKETMASTER_CONSUMER_KEY` | [Ticketmaster Developer](https://developer.ticketmaster.com/) — your app’s **consumer key** (same value the docs call the API key for `?apikey=`). Alias: `TICKETMASTER_API_KEY`. |
+| `TICKETMASTER_CONSUMER_SECRET` | Optional in `.env.local` for your records. **Not used** by this app: Discovery event search is a GET with `apikey` only; the secret is for other OAuth-style Ticketmaster APIs. |
+
+**Wikipedia + Wikidata** — no API key. The app runs a [Wikidata SPARQL](https://query.wikidata.org/) lookup on property **P434** (MusicBrainz artist id), then loads the English article via the [Wikipedia REST summary](https://en.wikipedia.org/api/rest_v1/) API. Not every artist has a linked article; disambiguation pages are skipped.
+
+MusicBrainz needs no key; set a real app name/contact in `src/lib/musicbrainz.ts` `User-Agent` per [MusicBrainz](https://musicbrainz.org/doc/MusicBrainz_API/Rate_Limiting).
+
+### YouTube shows no videos but the key is set
+
+This app calls the YouTube API from the **server**. In Google Cloud → **Credentials** → your API key: avoid **HTTP referrer** restrictions for local/server use; use **None** or **IP**. Allow **YouTube Data API v3**.
+
+## Run
 
 ```bash
 npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+Open [http://localhost:3000](http://localhost:3000), search an artist, open a result.
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+The home page shows **Recently Searched Artists** (up to 16 tiles) from a shared file `data/recent-artists.json` (gitignored). Each successful **artist page** view records that act and stores the **top YouTube result thumbnail** (when the YouTube API returns a hit) for the tile image. On read-only or ephemeral serverless disks, replace this store with a database or hosted KV if you deploy.
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+## API routes
 
-## Learn More
-
-To learn more about Next.js, take a look at the following resources:
-
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
-
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
-
-## Deploy on Vercel
-
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
-
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+- `GET /api/search?q=` — MusicBrainz artist search (JSON).
+- `GET /api/artist/[mbid]` — Aggregated artist payload (JSON).

@@ -1,0 +1,8 @@
+# Next.js 13.5+ is auto-detected; OpenNext adapter runs `next build` for you.
+# https://docs.netlify.com/build/frameworks/framework-setup-guides/nextjs/overview/
+
+[build]
+  command = "npm run build"
+
+[build.environment]
+  NODE_VERSION = "22"
