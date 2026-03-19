@@ -40,5 +40,5 @@ yarn-error.log*
 *.tsbuildinfo
 next-env.d.ts
 
-# Home grid snapshot: `data/recent-artists.json` is tracked so Netlify serves it from the deploy.
-# Update locally, commit, and push to refresh production tiles (Netlify cannot persist writes).
+# Optional: ignore local overrides of sample artists JSON; default is to commit `data/recent-artists.json`.
+# /data/recent-artists.json

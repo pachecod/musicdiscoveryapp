@@ -4,7 +4,6 @@ import { notFound } from "next/navigation";
 import { ConcertMapDynamic } from "@/components/ConcertMapDynamic";
 import { loadArtistByMbid } from "@/lib/artist-data";
 import { getMbArtist } from "@/lib/musicbrainz";
-import { recordRecentArtist } from "@/lib/recent-artists";
 
 type Props = { params: Promise<{ mbid: string }> };
 
@@ -13,7 +12,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const mb = await getMbArtist(mbid);
   if (!mb) return { title: "Artist" };
   return {
-    title: `${mb.name} · Discover`,
+    title: `${mb.name} · Music Mambo`,
     description: mb.disambiguation
       ? `${mb.name} (${mb.disambiguation}) — videos, shows, and Wikipedia.`
       : `${mb.name} — videos, shows, and Wikipedia.`,
@@ -24,13 +23,6 @@ export default async function ArtistPage({ params }: Props) {
   const { mbid } = await params;
   const data = await loadArtistByMbid(mbid);
   if (!data) notFound();
-
-  await recordRecentArtist({
-    mbid: data.mbid,
-    name: data.name,
-    disambiguation: data.disambiguation,
-    coverUrl: data.youtube[0]?.thumbnailUrl,
-  });
 
   const { sources } = data;
 

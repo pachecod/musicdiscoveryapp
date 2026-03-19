@@ -1,4 +1,4 @@
-# Discover — music & video
+# Music Mambo — music & video
 
 Next.js app that searches **MusicBrainz** artists and opens a detail page with **YouTube** embeds, an English **Wikipedia** lead section (resolved with **Wikidata Query Service** using MusicBrainz ID [P434](https://www.wikidata.org/wiki/Property:P434)), and an **upcoming concerts** map from the **Ticketmaster Discovery API** (map tiles: **OpenStreetMap** via Leaflet — no map API key).
 
@@ -30,12 +30,12 @@ npm run dev
 
 Open [http://localhost:3000](http://localhost:3000), search an artist, open a result.
 
-The home page shows **Recently Searched Artists** (up to 16 tiles) from `data/recent-artists.json`.
+**Your searches** (home page) are saved in **`localStorage`** (up to 16 queries, deduped), with **YouTube thumbnails** from `GET /api/youtube-thumb?q=` (needs `YOUTUBE_API_KEY`). That grid only shows on **`/` without `?q=`**; with an active search you get the **MusicBrainz list** only. Opening an artist page does **not** add them to any server-side list — only your search strings are remembered, in the browser.
 
-- **Local / writable hosts:** each successful **artist page** view appends/updates the file and stores the **top YouTube result thumbnail** when available.
-- **Netlify:** the deploy bundle is read-only, so the grid shows whatever **last shipped in git**. To refresh production tiles, run the app locally (or edit the JSON), then **commit and push** `data/recent-artists.json` so the next deploy picks it up. Server-side writes are skipped when `NETLIFY=true` (not `netlify dev`).
+**Sample artists** (second grid on `/`) are **read-only** from `data/recent-artists.json`: edit the file in git and deploy to change the curated demo tiles. Nothing in the app writes to that file at runtime.
 
 ## API routes
 
 - `GET /api/search?q=` — MusicBrainz artist search (JSON).
+- `GET /api/youtube-thumb?q=` — First YouTube search hit thumbnail URL (JSON `{ thumbnailUrl }`).
 - `GET /api/artist/[mbid]` — Aggregated artist payload (JSON).

@@ -1,6 +1,26 @@
 {
   "items": [
     {
+      "mbid": "5441c29d-3602-4898-b1a1-b77fa23b8e50",
+      "name": "David Bowie",
+      "disambiguation": "English singer‐songwriter",
+      "viewedAt": 1773959556226,
+      "coverUrl": "https://i.ytimg.com/vi/z5jXChsIC6o/mqdefault.jpg"
+    },
+    {
+      "mbid": "811900b2-68fc-4d41-8bad-69b7a1f4d628",
+      "name": "Nelly",
+      "disambiguation": "US rapper",
+      "viewedAt": 1773959473894,
+      "coverUrl": "https://i.ytimg.com/vi/8WYHDfJDPDc/mqdefault.jpg"
+    },
+    {
+      "mbid": "2c5d1064-e591-4292-98a5-569bffcaff4e",
+      "name": "Keir",
+      "viewedAt": 1773959444782,
+      "coverUrl": "https://i.ytimg.com/vi/-dd-90aLdKk/mqdefault.jpg"
+    },
+    {
       "mbid": "b5c4ffa2-82e1-4b72-b7f3-c60afb74b860",
       "name": "Ray LaMontagne",
       "viewedAt": 1773957546074,

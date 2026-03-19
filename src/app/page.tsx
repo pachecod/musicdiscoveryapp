@@ -1,8 +1,10 @@
 import Link from "next/link";
+import { Suspense } from "react";
+import { RecentSearchHistory } from "@/components/RecentSearchTiles";
 import {
-  RECENT_GRID_LIMIT,
-  getRecentArtists,
-  type RecentArtistRecord,
+  SAMPLE_ARTISTS_GRID_LIMIT,
+  getSampleArtists,
+  type SampleArtistRecord,
 } from "@/lib/recent-artists";
 import { searchMbArtists } from "@/lib/musicbrainz";
 
@@ -13,22 +15,19 @@ export const dynamic = "force-dynamic";
 export default async function Home({ searchParams }: Props) {
   const q = (await searchParams).q?.trim() ?? "";
 
-  const [artists, recent] = await Promise.all([
+  const [artists, sampleArtists] = await Promise.all([
     q ? searchMbArtists(q, 24) : Promise.resolve([]),
-    getRecentArtists(RECENT_GRID_LIMIT),
+    getSampleArtists(SAMPLE_ARTISTS_GRID_LIMIT),
   ]);
 
-  const recentSlots: (RecentArtistRecord | null)[] = [...recent];
-  while (recentSlots.length < RECENT_GRID_LIMIT) recentSlots.push(null);
+  const sampleSlots: (SampleArtistRecord | null)[] = [...sampleArtists];
+  while (sampleSlots.length < SAMPLE_ARTISTS_GRID_LIMIT) sampleSlots.push(null);
 
   return (
     <div className="min-h-full bg-[#0c0b09] text-[#f4f0e6]">
       <div className="mx-auto flex min-h-full w-full max-w-5xl flex-col gap-10 px-5 py-14">
-        <header className="space-y-2">
-          <p className="font-mono text-xs tracking-[0.2em] text-[#c4a574] uppercase">
-            Music discovery
-          </p>
-          <h1 className="font-[family-name:var(--font-fraunces)] text-4xl leading-tight font-medium text-[#fff8ef]">
+        <header className="space-y-4">
+          <h1 className="font-[family-name:var(--font-fraunces)] text-xl font-medium text-[#c4a574] sm:text-2xl">
             Find artists, tracks, and videos
           </h1>
           <p className="max-w-xl text-sm leading-relaxed text-[#a8a095]">
@@ -72,6 +71,10 @@ export default async function Home({ searchParams }: Props) {
             <h2 className="font-mono text-xs tracking-widest text-[#7a7165] uppercase">
               Results for “{q}”
             </h2>
+            <p className="text-xs text-[#6b6459]">
+              Choose an artist to open their page. Tiles for your past searches appear when you return
+              to the home page without a search.
+            </p>
             {artists.length === 0 ? (
               <p className="text-sm text-[#a8a095]">No artists matched. Try another spelling.</p>
             ) : (
@@ -95,18 +98,27 @@ export default async function Home({ searchParams }: Props) {
           </section>
         )}
 
+        <Suspense fallback={null}>
+          <RecentSearchHistory />
+        </Suspense>
+
+        {!q && (
         <section className="space-y-4">
           <h2 className="font-mono text-xs tracking-[0.2em] text-[#7a7165] uppercase">
-            Recently Searched Artists
+            Sample artists
           </h2>
-          {recent.length === 0 ? (
+          {sampleArtists.length === 0 ? (
             <p className="text-sm text-[#a8a095]">
-              Open any artist page to add them here. The list is shared for everyone using this app on
-              the same server.
+              Add entries to{" "}
+              <code className="rounded bg-[#141210] px-1.5 py-0.5 font-mono text-xs text-[#d4cfc4]">
+                data/recent-artists.json
+              </code>{" "}
+              in the repo to show curated demo tiles. Personal search history lives only under Your searches
+              above.
             </p>
           ) : (
             <ul className="grid w-full grid-cols-4 gap-2 sm:gap-3">
-              {recentSlots.map((a, i) =>
+              {sampleSlots.map((a, i) =>
                 a ? (
                   <li key={a.mbid} className="min-w-0">
                     <Link
@@ -169,6 +181,7 @@ export default async function Home({ searchParams }: Props) {
             </ul>
           )}
         </section>
+        )}
       </div>
     </div>
   );

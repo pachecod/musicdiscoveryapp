@@ -1,35 +1,20 @@
-import { mkdir, readFile, writeFile } from "fs/promises";
+import { readFile } from "fs/promises";
 import path from "path";
 
-/** Netlify Functions use a read-only bundle; recent list is the committed JSON. `netlify dev` still writes locally. */
-function shouldSkipRecentWrites(): boolean {
-  return process.env.NETLIFY === "true" && process.env.NETLIFY_DEV !== "true";
-}
+const STORE_PATH = path.join(process.cwd(), "data", "recent-artists.json");
+export const SAMPLE_ARTISTS_GRID_LIMIT = 16;
 
-const DATA_DIR = path.join(process.cwd(), "data");
-const STORE_PATH = path.join(DATA_DIR, "recent-artists.json");
-const MAX_STORED = 48;
-export const RECENT_GRID_LIMIT = 16;
-
-export type RecentArtistRecord = {
+export type SampleArtistRecord = {
   mbid: string;
   name: string;
   disambiguation?: string;
   viewedAt: number;
-  /** Top YouTube search result thumbnail (same source as the artist page hero when YouTube wins). */
   coverUrl?: string;
 };
 
-type StoreFile = { items: RecentArtistRecord[] };
+type StoreFile = { items: SampleArtistRecord[] };
 
-let writeChain: Promise<void> = Promise.resolve();
-
-function enqueueWrite(task: () => Promise<void>): Promise<void> {
-  writeChain = writeChain.then(task).catch(() => {});
-  return writeChain;
-}
-
-async function readStore(): Promise<RecentArtistRecord[]> {
+async function readStore(): Promise<SampleArtistRecord[]> {
   try {
     const raw = await readFile(STORE_PATH, "utf-8");
     const parsed = JSON.parse(raw) as StoreFile;
@@ -47,17 +32,11 @@ async function readStore(): Promise<RecentArtistRecord[]> {
   }
 }
 
-async function writeStore(items: RecentArtistRecord[]): Promise<void> {
-  await mkdir(DATA_DIR, { recursive: true });
-  const payload: StoreFile = { items };
-  await writeFile(STORE_PATH, JSON.stringify(payload, null, 2), "utf-8");
-}
-
-/** Newest-first unique artists (by mbid), capped for the home grid. */
-export async function getRecentArtists(limit = RECENT_GRID_LIMIT): Promise<RecentArtistRecord[]> {
+/** Curated demo tiles from `data/recent-artists.json` (git only — not updated when users open artists). */
+export async function getSampleArtists(limit = SAMPLE_ARTISTS_GRID_LIMIT): Promise<SampleArtistRecord[]> {
   const items = await readStore();
   const seen = new Set<string>();
-  const out: RecentArtistRecord[] = [];
+  const out: SampleArtistRecord[] = [];
   for (const r of items) {
     const id = r.mbid.toLowerCase();
     if (seen.has(id)) continue;
@@ -66,36 +45,4 @@ export async function getRecentArtists(limit = RECENT_GRID_LIMIT): Promise<Recen
     if (out.length >= limit) break;
   }
   return out;
-}
-
-/**
- * Call when an artist page loads successfully. Shared across all visitors
- * (local `data/recent-artists.json`; on serverless hosts without a shared disk,
- * use external storage instead).
- */
-export async function recordRecentArtist(entry: {
-  mbid: string;
-  name: string;
-  disambiguation?: string;
-  coverUrl?: string | null;
-}): Promise<void> {
-  const mbid = entry.mbid.trim();
-  const name = entry.name.trim();
-  if (!mbid || !name) return;
-
-  if (shouldSkipRecentWrites()) return;
-
-  await enqueueWrite(async () => {
-    const items = await readStore();
-    const filtered = items.filter((r) => r.mbid.toLowerCase() !== mbid.toLowerCase());
-    const coverUrl = entry.coverUrl?.trim() || undefined;
-    filtered.unshift({
-      mbid,
-      name,
-      disambiguation: entry.disambiguation?.trim() || undefined,
-      viewedAt: Date.now(),
-      coverUrl,
-    });
-    await writeStore(filtered.slice(0, MAX_STORED));
-  });
 }
